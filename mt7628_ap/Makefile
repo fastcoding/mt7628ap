@@ -2,6 +2,10 @@ RT_DRV_DIR  := mt7628
 RT_DRV_PATH := ../$(RT_DRV_DIR)/embedded
 RT_DRV_NAME := mt7628_ap
 
+
+ifneq ($(KERNELRELEASE),)
+# call from kernel build system
+
 obj-$(CONFIG_MT7628_AP) += $(RT_DRV_NAME).o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_md5.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_sha2.o
@@ -441,3 +445,44 @@ endif
 ifeq ($(CONFIG_RT_CFG80211),y)
 EXTRA_CFLAGS += -DRT_CFG80211_SUPPORT -DEXT_BUILD_CHANNEL_LIST
 endif
+
+#################################
+else
+# external module build
+EXTRA_FLAGS += -I$(PWD)
+
+#
+# KDIR is a path to a directory containing kernel source.
+# It can be specified on the command line passed to make to enable the module to
+# be built and installed for a kernel other than the one currently running.
+# By default it is the path to the symbolic link created when
+# the current kernel's modules were installed, but
+# any valid path to the directory in which the target kernel's source is located
+# can be provided on the command line.
+#
+KDIR	:= /lib/modules/$(shell uname -r)/build
+MDIR	:= /lib/modules/$(shell uname -r)
+PWD	:= $(shell pwd)
+KREL	:= $(shell cd ${KDIR} && make -s kernelrelease)
+PWD	:= $(shell pwd)
+
+all:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+clean:
+	$(MAKE) -C $(KDIR) M=$(PWD) clean
+
+help:
+	$(MAKE) -C $(KDIR) M=$(PWD) help
+
+install: $(RT_DRV_NAME).ko
+	rm -f ${MDIR}/drivers/net/wireless/ravlink/$(RT_DRV_NAME).ko
+	install -m644 -b -D $(RT_DRV_NAME).ko ${MDIR}/drivers/net/wireless/ravlink/$(RT_DRV_NAME).ko
+	depmod -aq
+
+uninstall:
+	rm -f ${MDIR}/drivers/net/wireless/ravlink/$(RT_DRV_NAME).ko
+	depmod -aq
+
+endif
+#.PHONY : all clean install uninstall
