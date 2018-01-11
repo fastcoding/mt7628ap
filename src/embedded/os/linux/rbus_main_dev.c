@@ -34,13 +34,13 @@
 #ifdef RT_CFG80211_SUPPORT
 #include <linux/fs.h>           /* chrdev allocation */
 #include <linux/cdev.h>
-
+#include <linux/proc_fs.h>
 struct file_operations dev_reg_fops = {
 	.open = NULL,
 	.release = NULL,
 };
 
-#define DEVNUM_NAME "cfg_rbus"	
+#define DEVNUM_NAME "cfg_rbus"
 #define DEVNUM_MINOR_START 0
 #define DEVNUM_COUNT 1
 
@@ -57,7 +57,7 @@ extern int (*ra_classifier_init_func) (void) ;
 extern void (*ra_classifier_release_func) (void) ;
 extern struct proc_dir_entry *proc_ptr, *proc_ralink_wl_video;
 #endif
-
+struct proc_dir_entry *procRegDir=NULL;
 
 int __init rt2880_module_init(void)
 {
@@ -69,14 +69,14 @@ int __init rt2880_module_init(void)
 	unsigned int dev_irq;
 	RTMP_OS_NETDEV_OP_HOOK netDevHook;
 	UINT32 Value;
-    
+
 #ifdef RT_CFG80211_SUPPORT
     INT alloc_ret=0,cdev_err=0;
 	static unsigned int dev_reg_major = 0;
 #endif /* RT_CFG80211_SUPPORT */
 
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("===> rt2880_probe\n"));
-	
+
 	/*add for initial hook callback function linking list*/
 	RTMP_OS_TXRXHOOK_INIT();
 
@@ -162,9 +162,9 @@ int __init rt2880_module_init(void)
 
 	/* register a dummy char device for CFG80211_Register because RBUS don't have a real device */
 
-	
+
 	alloc_ret = alloc_chrdev_region(&dev, DEVNUM_MINOR_START, DEVNUM_COUNT, DEVNUM_NAME);
-	if(alloc_ret){	         
+	if(alloc_ret){
 	         MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s : could not allocate device\n", __func__));
 	         goto err_out_free_radev;
 	}
@@ -172,12 +172,12 @@ int __init rt2880_module_init(void)
 	         MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s : registered char dev with major number:%i, minor number:%i\n",
 	                    __func__, MAJOR(dev), MINOR(dev)));
 	         dev_reg_major = MAJOR(dev);
-	}         
+	}
 	cl = class_create(THIS_MODULE, "chardrv");
 	dev_ret = device_create(cl, NULL, dev, NULL, "mynull");
-	
+
 	cdev_init(&dev_reg_cdev, &dev_reg_fops);
-	dev_reg_cdev.owner = THIS_MODULE;	
+	dev_reg_cdev.owner = THIS_MODULE;
 
 	cdev_err = cdev_add(&dev_reg_cdev, MKDEV(dev_reg_major, 0), DEVNUM_COUNT);
 	if(cdev_err){
@@ -190,7 +190,7 @@ int __init rt2880_module_init(void)
 		goto err_out_free_radev;
 	}
     /* register a dummy char device done */
-    
+
 	CFG80211_Register(pAd, dev_ret , net_dev);
 #endif /* RT_CFG80211_SUPPORT */
 
@@ -220,6 +220,7 @@ int __init rt2880_module_init(void)
 		ra_classifier_init_func();
 #endif
 
+	procRegDir=proc_mkdir("mt7628",NULL);
 	return 0;
 
 err_out_free_netdev:
@@ -239,7 +240,10 @@ VOID __exit rt2880_module_exit(void)
 {
 	struct net_device *net_dev = rt2880_dev;
 	RTMP_ADAPTER *pAd;
-
+	if (procRegDir){
+		proc_remove(procRegDir);
+		procRegDir=NULL;
+	}
 
 	if (net_dev == NULL)
 		return;
@@ -284,4 +288,3 @@ module_exit(rt2880_module_exit);
 #endif /* MULTI_INF_SUPPORT */
 
 #endif /* RTMP_RBUS_SUPPORT */
-

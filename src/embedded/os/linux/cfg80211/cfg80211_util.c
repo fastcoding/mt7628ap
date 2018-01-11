@@ -146,11 +146,11 @@ static const UINT32 CipherSuites[] = {
 	WLAN_CIPHER_SUITE_WEP104,
 	WLAN_CIPHER_SUITE_TKIP,
 	WLAN_CIPHER_SUITE_CCMP,
-#ifdef DOT11W_PMF_SUPPORT	
+#ifdef DOT11W_PMF_SUPPORT
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
 	WLAN_CIPHER_SUITE_AES_CMAC,
 #endif /* LINUX_VERSION_CODE */
-#endif /* DOT11W_PMF_SUPPORT */	
+#endif /* DOT11W_PMF_SUPPORT */
 };
 
 static BOOLEAN IsRadarChannel(UCHAR ch)
@@ -161,7 +161,7 @@ static BOOLEAN IsRadarChannel(UCHAR ch)
 		if (Cfg80211_RadarChan[idx] == ch)
 			return TRUE;
 	}
-	
+
 	return FALSE;
 }
 
@@ -195,7 +195,7 @@ VOID CFG80211OS_UnRegister(VOID *pCB, VOID *pNetDevOrg)
 			Must unregister, or you will suffer problem when you change
 			regulatory domain by using iw.
 		*/
-		
+
 		if (pCfg80211_CB->pCfg80211_Wdev->wiphy != NULL)
 		{
 #ifdef RFKILL_HW_SUPPORT
@@ -274,8 +274,8 @@ BOOLEAN CFG80211_SupBandInit(
 	/* sanity check */
 	if (pDriverBandInfo->RFICType == 0)
 		pDriverBandInfo->RFICType = RFIC_24GHZ | RFIC_5GHZ;
-		
-	
+
+
 	/* 1. Calcute the Channel Number */
 	if (pDriverBandInfo->RFICType & RFIC_5GHZ)
 		NumOfChan = CFG80211_NUM_OF_CHAN_2GHZ + CFG80211_NUM_OF_CHAN_5GHZ;
@@ -290,7 +290,7 @@ BOOLEAN CFG80211_SupBandInit(
 
 	CFG80211DBG(DBG_LVL_ERROR, ("80211> RFICType= %d, NumOfChan= %d\n", pDriverBandInfo->RFICType, NumOfChan));
 	CFG80211DBG(DBG_LVL_ERROR, ("80211> Number of rate = %d\n", NumOfRate));
-	
+
 	/* 3. Allocate the Channel instance */
 	if (pChannels == NULL && NumOfChan)
 	{
@@ -338,7 +338,7 @@ BOOLEAN CFG80211_SupBandInit(
 		{
 			pChannels[IdLoop].band = IEEE80211_BAND_2GHZ;
 		    pChannels[IdLoop].center_freq = \
-			    		ieee80211_channel_to_frequency(Cfg80211_Chan[IdLoop], IEEE80211_BAND_2GHZ);			
+			    		ieee80211_channel_to_frequency(Cfg80211_Chan[IdLoop], IEEE80211_BAND_2GHZ);
 		}
 #else
 		pChannels[IdLoop].center_freq = ieee80211_channel_to_frequency(Cfg80211_Chan[IdLoop]);
@@ -357,7 +357,7 @@ BOOLEAN CFG80211_SupBandInit(
 		{
 			pChannels[IdLoop].flags = 0;
 			CFG80211DBG(DBG_LVL_TRACE, ("====> Rader Channel %d\n", Cfg80211_Chan[IdLoop]));
-			pChannels[IdLoop].flags |= (IEEE80211_CHAN_RADAR | IEEE80211_CHAN_PASSIVE_SCAN);
+			pChannels[IdLoop].flags |= (IEEE80211_CHAN_RADAR | 2);
 		}
 /*		CFG_TODO:
 		pChannels[IdLoop].flags
@@ -368,14 +368,14 @@ BOOLEAN CFG80211_SupBandInit(
 			IEEE80211_CHAN_RADAR		= 1<<3,
 			IEEE80211_CHAN_NO_HT40PLUS	= 1<<4,
 			IEEE80211_CHAN_NO_HT40MINUS	= 1<<5,
-		};		
- */		
+		};
+ */
 	}
 
 	/* 6. init rate */
 	for(IdLoop=0; IdLoop<NumOfRate; IdLoop++)
 		memcpy(&pRates[IdLoop], &Cfg80211_SupRate[IdLoop], sizeof(*pRates));
-	
+
 /*		CFG_TODO:
 		enum ieee80211_rate_flags {
 			IEEE80211_RATE_SHORT_PREAMBLE	= 1<<0,
@@ -384,7 +384,7 @@ BOOLEAN CFG80211_SupBandInit(
 			IEEE80211_RATE_MANDATORY_G	= 1<<3,
 			IEEE80211_RATE_ERP_G		= 1<<4,
 		};
- */	
+ */
 
 	/* 7. Fill the Band 2.4GHz */
 	pBand = &pCfg80211_CB->Cfg80211_bands[IEEE80211_BAND_2GHZ];
@@ -485,7 +485,7 @@ BOOLEAN CFG80211_SupBandInit(
 				pBand->ht_cap.mcs.rx_highest = cpu_to_le16(450);
 				break;
 		}
-		
+
 		pBand->ht_cap.mcs.rx_mask[4] = 0x01; /* 40MHz*/
 		pBand->ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
 #endif /* DOT11_N_SUPPORT */
@@ -843,15 +843,15 @@ VOID CFG80211OS_Scaning(
 	mgmt = (struct ieee80211_mgmt *) pFrame;
 
 	/* Sanity check */
-	if (ChanId == 0) 
+	if (ChanId == 0)
 		ChanId = 1;
-		
+
 	/* get channel information */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,39))
 	if (ChanId > 14)
 	    CenFreq = ieee80211_channel_to_frequency(ChanId, IEEE80211_BAND_5GHZ);
 	else
-		CenFreq = ieee80211_channel_to_frequency(ChanId, IEEE80211_BAND_2GHZ); 
+		CenFreq = ieee80211_channel_to_frequency(ChanId, IEEE80211_BAND_2GHZ);
 #else
 	CenFreq = ieee80211_channel_to_frequency(ChanId);
 #endif
@@ -862,16 +862,16 @@ VOID CFG80211OS_Scaning(
 		CurBand = IEEE80211_BAND_2GHZ;
 
 	pBand = &pCfg80211_CB->Cfg80211_bands[CurBand];
-	
+
 	for(IdChan=0; IdChan < pBand->n_channels; IdChan++)
 	{
 		if (pBand->channels[IdChan].center_freq == CenFreq)
 			break;
 	}
-	
+
 	if (IdChan >= pBand->n_channels)
 	{
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("80211> Can not find any chan info! ==> %d[%d],[%d] \n", 
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("80211> Can not find any chan info! ==> %d[%d],[%d] \n",
 			ChanId, CenFreq, pBand->n_channels));
 		return;
 	}
@@ -879,9 +879,9 @@ VOID CFG80211OS_Scaning(
 	if(pWiphy->signal_type == CFG80211_SIGNAL_TYPE_MBM)
 	{
 		/* CFG80211_SIGNAL_TYPE_MBM: signal strength in mBm (100*dBm) */
-		RSSI = RSSI * 100;  
+		RSSI = RSSI * 100;
 	}
-	
+
 	if (!mgmt->u.probe_resp.timestamp)
 	{
 		struct timeval tv;
@@ -895,19 +895,19 @@ VOID CFG80211OS_Scaning(
 	bss = cfg80211_inform_bss_frame(pWiphy, &pBand->channels[IdChan],
 					  mgmt,	FrameLen,
 					  RSSI,	GFP_ATOMIC);
-									
-	if (unlikely(!bss)) 
+
+	if (unlikely(!bss))
 	{
 		CFG80211DBG(DBG_LVL_ERROR, ("80211> bss inform fail ==> %d\n", IdChan));
 		return;
 	}
-	
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
 	cfg80211_put_bss(pWiphy,bss);
 #else
 	cfg80211_put_bss(bss);
 #endif /* LINUX_VERSION_CODE: 3.9.0 */
-		
+
 #endif /* CONFIG_STA_SUPPORT */
 #endif /* LINUX_VERSION_CODE */
 }
@@ -1022,7 +1022,7 @@ void CFG80211OS_P2pClientConnectResultInform(
 {
 	if ((pNetDev == NULL) || (pBSSID == NULL))
 		return;
-		
+
 	if (FlgIsSuccess)
 	{
 		printk("APCLI: ReqIeLen %d, RspIeLen, %d\n", ReqIeLen, RspIeLen);
@@ -1044,10 +1044,10 @@ void CFG80211OS_P2pClientConnectResultInform(
 								NULL, 0, NULL, 0,
 								WLAN_STATUS_UNSPECIFIED_FAILURE,
 								GFP_KERNEL);
-	} 
-}	
+	}
+}
 
-BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, IN UINT32 len) 
+BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, IN UINT32 len)
 {
 	/* Sanity Check */
 
@@ -1058,7 +1058,7 @@ BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, I
 	}
 
 	//hex_dump("CFG80211OS_RxMgmt", frame, len);
-	
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
 	return cfg80211_rx_mgmt(pNetDev->ieee80211_ptr,
                                 freq,
@@ -1066,7 +1066,7 @@ BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, I
                                 frame,
                                 len,
                                 GFP_ATOMIC);
-#else	
+#else
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0))
 	return cfg80211_rx_mgmt(pNetDev,
 				freq,
@@ -1074,7 +1074,7 @@ BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, I
 				frame,
 				len,
 				0,
-				GFP_ATOMIC); 
+				GFP_ATOMIC);
 #else
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
         return cfg80211_rx_mgmt(pNetDev, freq, frame, len, GFP_ATOMIC);
@@ -1118,11 +1118,12 @@ VOID CFG80211OS_NewSta(IN PNET_DEV pNetDev, IN const PUCHAR mac_addr, IN const P
 
 
 /* If get error here, be sure patch the cfg80211_new_sta.patch into kernel. */
-	if (pNetDev->ieee80211_ptr->iftype != RT_CMD_80211_IFTYPE_ADHOC) 
+	if (pNetDev->ieee80211_ptr->iftype != RT_CMD_80211_IFTYPE_ADHOC)
 	{
-		sinfo.filled = STATION_INFO_ASSOC_REQ_IES;
-        mgmt = (struct ieee80211_mgmt *) assoc_frame;   
-		
+		//#define STATION_INFO_ASSOC_REQ_IES	(1<<17)
+		sinfo.filled = (1<<17);
+        mgmt = (struct ieee80211_mgmt *) assoc_frame;
+
 		if (ieee80211_is_reassoc_req(mgmt->frame_control))
 		{
 			/* Re-AssocReq more than one BSSID for current AP */
@@ -1136,7 +1137,7 @@ VOID CFG80211OS_NewSta(IN PNET_DEV pNetDev, IN const PUCHAR mac_addr, IN const P
 		}
 	}
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))	
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))
 	return cfg80211_new_sta(pNetDev, mac_addr, &sinfo, GFP_ATOMIC);
 #endif /* LINUX_VERSION_CODE: 2.6.34 */
 
@@ -1151,8 +1152,8 @@ VOID CFG80211OS_DelSta(IN PNET_DEV pNetDev, IN const PUCHAR mac_addr)
 
 VOID CFG80211OS_MICFailReport(PNET_DEV pNetDev, const PUCHAR src_addr, BOOLEAN unicast, INT key_id, const PUCHAR tsc)
 {
-	cfg80211_michael_mic_failure(pNetDev, src_addr, 
-		(unicast ? NL80211_KEYTYPE_PAIRWISE : NL80211_KEYTYPE_GROUP), 
+	cfg80211_michael_mic_failure(pNetDev, src_addr,
+		(unicast ? NL80211_KEYTYPE_PAIRWISE : NL80211_KEYTYPE_GROUP),
 		key_id, tsc, GFP_ATOMIC);
 }
 
@@ -1167,7 +1168,7 @@ VOID CFG80211OS_Roamed(
 #endif /* LINUX_VERSION_CODE: 2.6.39 */
 		pBSSID,
 		pReqIe, ReqIeLen,
-		pRspIe, RspIeLen, 
+		pRspIe, RspIeLen,
 		GFP_KERNEL);
 }
 
@@ -1184,7 +1185,7 @@ VOID CFG80211OS_RecvObssBeacon(VOID *pCB, const PUCHAR pFrame, INT frameLen, INT
 #else
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0))
 	cfg80211_report_obss_beacon(pWiphy, pFrame,frameLen, freq, GFP_ATOMIC);
-#endif /* LINUX_VERSION_CODE: 3.3.0 */	
+#endif /* LINUX_VERSION_CODE: 3.3.0 */
 #endif /* LINUX_VERSION_CODE: 3.4.0 */
 #endif /* LINUX_VERSION_CODE: 3.8.0 */
 }
@@ -1206,20 +1207,30 @@ VOID CFG80211OS_InformBSS(
 	}
 
 	pWiphy = pCfg80211_CB->pCfg80211_Wdev->wiphy;
-	
-	cfg80211_inform_bss(pWiphy, 
+	cfg80211_inform_bss_width(pWiphy,
+				  pCfg80211_CB->pCfg80211_Channels,
+				  NL80211_BSS_CHAN_WIDTH_20,
+				  CFG80211_BSS_FTYPE_BEACON,
+				  pBssid, 0, WLAN_CAPABILITY_IBSS,
+				 beacon_interval, pBeacon, BeaconLen,
+				 0, GFP_KERNEL);
+/*
+	cfg80211_inform_bss(pWiphy,
 					pCfg80211_CB->pCfg80211_Channels,
 					pBssid,
-					0,
+					0,//tsf
 					WLAN_CAPABILITY_IBSS,
 					beacon_interval,
-					pBeacon, BeaconLen,
-					0, GFP_KERNEL);
+					pBeacon,//ie
+					 BeaconLen,//ielen
+					0, //signal
+					GFP_KERNEL);
+					*/
 }
 
 VOID CFG80211OS_JoinIBSS(IN PNET_DEV pNetDev, IN const PUCHAR pBssid)
 {
-	cfg80211_ibss_joined(pNetDev, pBssid, GFP_KERNEL);
+	cfg80211_ibss_joined(pNetDev, pBssid, NULL,GFP_KERNEL);
 }
 
 #ifdef CFG80211_BUILD_CHANNEL_LIST
@@ -1259,8 +1270,8 @@ VOID CFG80211OS_ForceUpdateChanFlags(
         if (!pChannels) break;
         if ((pChannels->center_freq>= (UINT16)freq_start_mhz) &&
             (pChannels->center_freq<= (UINT16)freq_end_mhz))
-        {			pChannels->flags &= ~IEEE80211_CHAN_DISABLED; 
-			
+        {			pChannels->flags &= ~IEEE80211_CHAN_DISABLED;
+
             if (!(flags & NL80211_RRF_PASSIVE_SCAN))
                 pChannels->flags &= ~IEEE80211_CHAN_PASSIVE_SCAN;
             if (!(flags & NL80211_RRF_NO_IBSS))
@@ -1315,7 +1326,7 @@ INT32 CFG80211OS_UpdateRegRuleByRegionIdx(
      while (pChDesc && pChDesc->FirstChannel)
     {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,39))
- 
+
         freq_start_mhz = ieee80211_channel_to_frequency(pChDesc->FirstChannel, IEEE80211_BAND_2GHZ);
         freq_end_mhz = ieee80211_channel_to_frequency(pChDesc->FirstChannel + (pChDesc->NumOfCh-1),
                                                      IEEE80211_BAND_2GHZ);
@@ -1323,7 +1334,7 @@ INT32 CFG80211OS_UpdateRegRuleByRegionIdx(
 
         freq_start_mhz = ieee80211_channel_to_frequency(pChDesc->FirstChannel);
         freq_end_mhz = ieee80211_channel_to_frequency(pChDesc->FirstChannel+ (pChDesc->NumOfCh-1));
-#endif 
+#endif
         flags = 0;
         if (pChDesc->ChannelProp & CHANNEL_PASSIVE_SCAN)
             flags |= NL80211_RRF_PASSIVE_SCAN;
@@ -1346,7 +1357,7 @@ INT32 CFG80211OS_UpdateRegRuleByRegionIdx(
                     reg_ptr->reg_rules[rule_idx].freq_range.max_bandwidth_khz,
                     reg_ptr->reg_rules[rule_idx].flags));
         */
-        
+
         CFG80211OS_ForceUpdateChanFlags(pCB, freq_start_mhz, freq_end_mhz, flags);
         rule_idx ++;
         pChDesc ++;

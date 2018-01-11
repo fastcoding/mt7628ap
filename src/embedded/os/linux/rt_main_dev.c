@@ -66,7 +66,7 @@ module_param(mode, charp, 0);
 MODULE_PARM_DESC (mac, "rt_wifi: wireless mac addr");
 MODULE_PARM_DESC (mode, "rt_wifi: wireless operation mode");
 
-#ifdef OS_ABL_SUPPORT
+#ifdef OS_ABL_FUNC_SUPPORT
 RTMP_DRV_ABL_OPS RtmpDrvOps, *pRtmpDrvOps = &RtmpDrvOps;
 RTMP_NET_ABL_OPS RtmpDrvNetOps, *pRtmpDrvNetOps = &RtmpDrvNetOps;
 #endif /* OS_ABL_SUPPORT */
@@ -913,4 +913,3 @@ RT28xx_get_apcli_ether_stats64(PNET_DEV net_dev, struct rtnl_link_stats64 *stats
 	return stats;
 	}
 #endif /* APCLI_SUPPORT */
-
